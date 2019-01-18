@@ -43,7 +43,8 @@ public class Client {
 		
 		try {
 			dos.writeInt(name.length());
-			dos.writeChars(name);
+			byte[] send = name.getBytes();
+			dos.write(send);
 			
 			int length = dis.readInt();
 			byte[] b = new byte[length];
@@ -54,8 +55,5 @@ public class Client {
 			e.printStackTrace(System.err);
 			System.exit(-1);
 		}
-		
-		
-		
 	}
 }
