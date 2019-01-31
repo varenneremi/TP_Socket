@@ -1,4 +1,4 @@
-package tpSocket;
+package babyStep;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -23,6 +23,7 @@ public class Client {
 			server = new Socket(serverHost, serverPort);
 		} catch (UnknownHostException e) {
 			System.err.println("Erreur dans le nom de serveur");
+			System.exit(-1);
 		} catch (IOException e) {
 			e.printStackTrace(System.err);
 			System.exit(-1);

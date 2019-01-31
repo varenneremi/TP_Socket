@@ -1,4 +1,4 @@
-package tpSocket;
+package babyStep;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
