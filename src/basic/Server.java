@@ -14,15 +14,21 @@ import java.net.Socket;
 public class Server {
 
 	final static int SIZE = 512;
+	int port;
+	String folder;
 
-	public static void main(String[] args) {
-		ServerSocket server = null;
-		int port = 1234;
+	public Server(int port, String folder) {
+		this.port = port;
+		this.folder = folder;
+	}
+
+	private void run() {
 		InputStream is = null;
 		DataInputStream dis = null;
 		OutputStream os = null;
 		DataOutputStream dos = null;
 
+		ServerSocket server = null;
 		try {
 			server = new ServerSocket(port);
 		} catch (IOException e) {
@@ -32,6 +38,8 @@ public class Server {
 
 		while (true) {
 			Socket client = null;
+
+			// Connexion avec le client
 			try {
 				client = server.accept();
 			} catch (IOException e) {
@@ -40,6 +48,7 @@ public class Server {
 			}
 			System.out.println("Client" + client.getInetAddress() + " connected");
 
+			// Initialisation Input et Output
 			try {
 				is = client.getInputStream();
 				dis = new DataInputStream(is);
@@ -50,66 +59,48 @@ public class Server {
 				System.exit(-1);
 			}
 
-			int length;
+			// Lecture de la commande
 			String[] arg = null;
-			String erreur;
-
 			try {
-				length = dis.readInt();
-				byte[] bCommande = new byte[length];
-				dis.read(bCommande, 0, length);
-				String commande = new String(bCommande);
-				arg = commande.split(" ");
-			} catch (IOException e) {
-				e.printStackTrace(System.err);
+				arg = lecture_commande(dis);
+			} catch (IOException e2) {
+				e2.printStackTrace(System.err);
 				System.exit(-1);
 			}
 
+			// Verification du nombre d'argument
 			if (arg.length >= 2) {
+
+				String info = "OK";
+				byte[] bInfo = info.getBytes();
+				try {
+					dos.write(info.length());
+					dos.write(bInfo);
+				} catch (IOException e1) {
+					e1.printStackTrace(System.err);
+					System.exit(-1);
+				}
+
+				// Verification de la requete
 				if (arg[0].equals("get")) {
-					for (int i = 1; i < arg.length; i++) {
-						String file = arg[i];
+					// envoi du fichier
 
-						FileInputStream fis = null;
-						try {
-							fis = new FileInputStream(new File(file));
-							byte[] bFile = new byte[SIZE];
-
-							int n = 0;
-							while ((n = fis.read(bFile)) >= 0) {
-								dos.write(SIZE);
-								dos.write(bFile);
-								bFile = new byte[SIZE];
-							}
-							dos.write(-1);
-						} catch (FileNotFoundException e) {
-							erreur = file + "not found";
-							byte[] send = erreur.getBytes();
-							try {
-								dos.writeInt(erreur.length());
-								dos.write(send);
-							} catch (IOException e1) {
-								e.printStackTrace(System.err);
-								System.exit(-1);
-							}
-						} catch (IOException e) {
-							e.printStackTrace(System.err);
-							System.exit(-1);
-						} finally {
-							try {
-								fis.close();
-							} catch (IOException e) {
-								e.printStackTrace(System.err);
-								System.exit(-1);
-							}
-						}
-
-					}
-				} else {
-					erreur = "Commande inconnue";
-					byte[] send = erreur.getBytes();
 					try {
-						dos.writeInt(erreur.length());
+						dos.write(info.length());
+						dos.write(bInfo);
+					} catch (IOException e1) {
+						e1.printStackTrace(System.err);
+						System.exit(-1);
+					}
+
+					String file = arg[1];
+					lecture_fichier(file, dos);
+
+				} else {
+					String errCom = "Commande inconnue";
+					byte[] send = errCom.getBytes();
+					try {
+						dos.writeInt(errCom.length());
 						dos.write(send);
 					} catch (IOException e) {
 						e.printStackTrace(System.err);
@@ -117,10 +108,10 @@ public class Server {
 					}
 				}
 			} else {
-				erreur = "Pas assez d'argument";
-				byte[] send = erreur.getBytes();
+				String errArg = "Pas assez d'argument";
+				byte[] send = errArg.getBytes();
 				try {
-					dos.writeInt(erreur.length());
+					dos.writeInt(errArg.length());
 					dos.write(send);
 				} catch (IOException e) {
 					e.printStackTrace(System.err);
@@ -129,6 +120,79 @@ public class Server {
 			}
 
 		}
+	}
+
+	private void lecture_fichier(String file, DataOutputStream dos) {
+		FileInputStream fis = null;
+		try {
+			File f = new File(folder + "/" + file);
+			fis = new FileInputStream(f);
+
+			String info = "OK";
+			byte[] bInfo = info.getBytes();
+			dos.write(info.length());
+			dos.write(bInfo);
+
+			byte[] bFile = new byte[SIZE];
+
+			long tailleFic = f.length();
+			dos.writeLong(tailleFic);
+
+			int n = 0;
+			while ((n = fis.read(bFile)) >= 0) {
+				dos.write(bFile);
+			}
+			
+		} catch (FileNotFoundException e) {
+			String errFile = file + "not found";
+			byte[] send = errFile.getBytes();
+			try {
+				dos.writeInt(errFile.length());
+				dos.write(send);
+			} catch (IOException e1) {
+				e.printStackTrace(System.err);
+				System.exit(-1);
+			}
+		} catch (IOException e) {
+			e.printStackTrace(System.err);
+			System.exit(-1);
+		} finally {
+			try {
+				fis.close();
+			} catch (IOException e) {
+				e.printStackTrace(System.err);
+				System.exit(-1);
+			}
+		}
+	}
+
+	private String[] lecture_commande(DataInputStream dis) throws IOException {
+		int length;
+		String[] arg;
+
+		length = dis.readInt();
+		byte[] bCommande = new byte[length];
+		dis.read(bCommande, 0, length);
+		String commande = new String(bCommande);
+		arg = commande.split(" ");
+
+		return arg;
+	}
+
+	public static void main(String[] args) {
+		int port = 0;
+		String folder = null;
+		if (args.length != 2) {
+			System.err.println("Mauvais argument");
+			System.exit(-1);
+		} else {
+			port = Integer.parseInt(args[0]);
+			folder = args[1];
+		}
+
+		Server s = new Server(port, folder);
+
+		s.run();
 	}
 
 }
