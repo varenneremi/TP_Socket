@@ -68,31 +68,35 @@ public class Server {
 				System.exit(-1);
 			}
 
-			// Verification du nombre d'argument
-			if (arg.length >= 2) {
-				
+			process_request(arg, dos);
+		}
+	}
+
+	private void process_request(String[] arg, DataOutputStream dos) {
+		// Verification du nombre d'argument
+		if (arg.length >= 2) {
+
+			envoie_info("OK", dos);
+
+			// Verification de la requete
+			if (arg[0].equals("get")) {
+
 				envoie_info("OK", dos);
 
-				// Verification de la requete
-				if (arg[0].equals("get")) {
-					// envoi du fichier
+				// Debut envoi du fichier
+				String file = arg[1];
+				lecture_fichier(file, dos);
 
-					envoie_info("OK", dos);
-
-					String file = arg[1];
-					lecture_fichier(file, dos);
-
-				} else {
-					envoie_info("Commande inconnue", dos);
-				}
 			} else {
-				envoie_info("Pas assez d'arguments", dos);
+				envoie_info("Commande inconnue", dos);
 			}
-
+		} else {
+			envoie_info("Pas assez d'arguments", dos);
 		}
 	}
 	
-	private void envoie_info (String info, DataOutputStream dos) {
+	// Methode permettant de transmettre des informations au client
+	private void envoie_info(String info, DataOutputStream dos) {
 		byte[] bInfo = info.getBytes();
 		try {
 			dos.writeInt(info.length());
@@ -103,9 +107,11 @@ public class Server {
 		}
 	}
 
+	// Methode permettant d'ouvrir et d'envoyer le fichier au client
 	private void lecture_fichier(String file, DataOutputStream dos) {
 		FileInputStream fis = null;
 		try {
+			// Ouverture du fichier à lire
 			File f = new File(folder + "/" + file);
 			fis = new FileInputStream(f);
 
@@ -113,24 +119,28 @@ public class Server {
 
 			byte[] bFile = new byte[SIZE];
 
+			// Envoi de la taille du fichier
 			long tailleFic = f.length();
 			dos.writeLong(tailleFic);
 
+			// Envoi du fchier
 			int n = 0;
 			while ((n = fis.read(bFile)) >= 0) {
 				dos.write(bFile);
 			}
-			
+
+			// Fermeture du fichier
 			fis.close();
-			
+
 		} catch (FileNotFoundException e) {
 			envoie_info(file + " not found", dos);
 		} catch (IOException e) {
 			e.printStackTrace(System.err);
 			System.exit(-1);
-		} 
+		}
 	}
 
+	// Methode permettant de lire et decouper la commande
 	private String[] lecture_commande(DataInputStream dis) throws IOException {
 		int length;
 		String[] arg;

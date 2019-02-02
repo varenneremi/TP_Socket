@@ -30,6 +30,7 @@ public class Client {
 		OutputStream os = null;
 		DataOutputStream dos = null;
 
+		// Connection au serveur
 		try {
 			server = new Socket(serverHost, serverPort);
 		} catch (UnknownHostException e) {
@@ -40,6 +41,7 @@ public class Client {
 			System.exit(-1);
 		}
 
+		// Initialisation des Input et Output
 		try {
 			is = server.getInputStream();
 			dis = new DataInputStream(is);
@@ -64,38 +66,51 @@ public class Client {
 
 	}
 
+	// Methode permettant de recevoir le fichier demande
 	private void ecriture_fichier(DataInputStream dis) throws IOException {
 		FileOutputStream fos;
 		int n = 0;
 		byte[] bFile;
 		
+		// Dossier dans lequel on stockera le fichier recu
 		File folder = new File("Fichiers");
+		
+		// Si le dossier n'existe pas on le cree
 		if(!folder.exists() || !folder.isDirectory()) {
 			if(!folder.mkdir()) {
 				System.err.println("Folder not created");
 			}
 		}
 		
-		
+		// Fichier dans lequel on ecrit ce que l'o recoit du serveur
 		File f = new File("Fichiers/" + file);
+		
+		// Si il n'existe pas on le cree
 		if(!f.exists()) {
 			if(!f.createNewFile()) {
 				System.err.println("File not created");
 			}
-		} else {
+		}
+		// Sinon on le supprime et on en cree un nouveau
+		else {
 			f.delete();
 			f.createNewFile();
 		}
 		
+		// Ouverture du fichier
 		fos = new FileOutputStream(f);
 		
+		// Reception de la taille du fichier
 		long tailleFic = dis.readLong();
+		
+		// Creation du buffer recevant les octets depuis le serveur
 		if (tailleFic < SIZE) {
 			bFile = new byte[(int) tailleFic];
 		} else {
 			bFile = new byte[SIZE];
 		}
 		
+		// Reception du fichier
 		while(tailleFic > 0) {
 			n = dis.read(bFile);
 			if(tailleFic < n) {
@@ -103,25 +118,28 @@ public class Client {
 			} else {
 				fos.write(bFile);
 			}
-			
 			tailleFic -= n;
 		}
 		
+		// Fermeture du fichier
 		fos.close();
 	}
 
+	// Methode permettant de recevoir des info du serveur
 	private void lecture_rep(DataInputStream dis) throws IOException {
 		int length = dis.readInt();
 		byte[] bRep = new byte[length];
 		dis.read(bRep, 0, length);
 		String repServ = new String(bRep);
 		
+		// Si le message n'est pas "OK" alors c'est une erreur et on l'affiche au client
 		if(!repServ.equals("OK")) {
 			System.err.println(repServ);
 			System.exit(-1);
 		}
 	}
 
+	// Methode permettant d'envoyer la requete au serveur
 	private void envoi_commande(DataOutputStream dos) throws IOException {
 		String commande = "get " + file;
 		byte[] bCom = commande.getBytes();
