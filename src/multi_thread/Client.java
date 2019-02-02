@@ -1,4 +1,4 @@
-package basic;
+package multi_thread;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,10 +17,10 @@ public class Client {
 	int serverPort;
 	String file;
 
-	public Client(String serverHost2, int serverPort2, String file2) {
-		serverHost = serverHost2;
-		serverPort = serverPort2;
-		file = file2;
+	public Client(String serverHost, int serverPort, String file) {
+		this.serverHost = serverHost;
+		this.serverPort = serverPort;
+		this.file = file;
 	}
 
 	private void run() {
@@ -62,32 +62,31 @@ public class Client {
 		} catch (IOException e) {
 			e.printStackTrace(System.err);
 			System.exit(-1);
-		}		
+		}
 
 	}
 
-	// Methode permettant de recevoir le fichier demande
 	private void ecriture_fichier(DataInputStream dis) throws IOException {
 		FileOutputStream fos;
 		int n = 0;
 		byte[] bFile;
-		
+
 		// Dossier dans lequel on stockera le fichier recu
 		File folder = new File("Fichiers");
-		
+
 		// Si le dossier n'existe pas on le cree
-		if(!folder.exists() || !folder.isDirectory()) {
-			if(!folder.mkdir()) {
+		if (!folder.exists() || !folder.isDirectory()) {
+			if (!folder.mkdir()) {
 				System.err.println("Folder not created");
 			}
 		}
-		
+
 		// Fichier dans lequel on ecrit ce que l'o recoit du serveur
 		File f = new File("Fichiers/" + file);
-		
+
 		// Si il n'existe pas on le cree
-		if(!f.exists()) {
-			if(!f.createNewFile()) {
+		if (!f.exists()) {
+			if (!f.createNewFile()) {
 				System.err.println("File not created");
 			}
 		}
@@ -96,38 +95,38 @@ public class Client {
 			f.delete();
 			f.createNewFile();
 		}
-		
+
 		// Ouverture du fichier
 		fos = new FileOutputStream(f);
-		
+
 		// Reception de la taille du fichier
 		long tailleFic = dis.readLong();
-		
+
 		// Creation du buffer recevant les octets depuis le serveur
 		if (tailleFic < SIZE) {
 			bFile = new byte[(int) tailleFic];
 		} else {
 			bFile = new byte[SIZE];
 		}
-		
+
 		// Reception du fichier
-		while(tailleFic > 0) {
+		while (tailleFic > 0) {
 			n = dis.read(bFile);
-			if(tailleFic < n) {
+			if (tailleFic < n) {
 				fos.write(bFile, 0, (int) tailleFic);
 			} else {
 				fos.write(bFile);
 			}
 			tailleFic -= n;
 		}
-		
+
 		// Fermeture du fichier
 		fos.close();
-		
+
 		System.out.println("Fichier correctement reçu.");
+
 	}
 
-	// Methode permettant de recevoir des info du serveur
 	private void lecture_rep(DataInputStream dis) throws IOException {
 		int length = dis.readInt();
 		byte[] bRep = new byte[length];
@@ -141,7 +140,6 @@ public class Client {
 		}
 	}
 
-	// Methode permettant d'envoyer la requete au serveur
 	private void envoi_commande(DataOutputStream dos) throws IOException {
 		String commande = "get " + file;
 		byte[] bCom = commande.getBytes();
@@ -167,4 +165,5 @@ public class Client {
 
 		c.run();
 	}
+
 }
