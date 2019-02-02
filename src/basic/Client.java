@@ -67,7 +67,7 @@ public class Client {
 	private void ecriture_fichier(DataInputStream dis) throws IOException {
 		FileOutputStream fos;
 		int n = 0;
-		byte[] bFile = new byte[SIZE];
+		byte[] bFile;
 		
 		File folder = new File("Fichiers");
 		if(!folder.exists() || !folder.isDirectory()) {
@@ -90,10 +90,20 @@ public class Client {
 		fos = new FileOutputStream(f);
 		
 		long tailleFic = dis.readLong();
+		if (tailleFic < SIZE) {
+			bFile = new byte[(int) tailleFic];
+		} else {
+			bFile = new byte[SIZE];
+		}
 		
 		while(tailleFic > 0) {
 			n = dis.read(bFile);
-			fos.write(bFile);
+			if(tailleFic < n) {
+				fos.write(bFile, 0, (int) tailleFic);
+			} else {
+				fos.write(bFile);
+			}
+			
 			tailleFic -= n;
 		}
 		
@@ -115,7 +125,7 @@ public class Client {
 	private void envoi_commande(DataOutputStream dos) throws IOException {
 		String commande = "get " + file;
 		byte[] bCom = commande.getBytes();
-		dos.write(commande.length());
+		dos.writeInt(commande.length());
 		dos.write(bCom);
 	}
 

@@ -70,55 +70,36 @@ public class Server {
 
 			// Verification du nombre d'argument
 			if (arg.length >= 2) {
-
-				String info = "OK";
-				byte[] bInfo = info.getBytes();
-				try {
-					dos.write(info.length());
-					dos.write(bInfo);
-				} catch (IOException e1) {
-					e1.printStackTrace(System.err);
-					System.exit(-1);
-				}
+				
+				envoie_info("OK", dos);
 
 				// Verification de la requete
 				if (arg[0].equals("get")) {
 					// envoi du fichier
 
-					try {
-						dos.write(info.length());
-						dos.write(bInfo);
-					} catch (IOException e1) {
-						e1.printStackTrace(System.err);
-						System.exit(-1);
-					}
+					envoie_info("OK", dos);
 
 					String file = arg[1];
 					lecture_fichier(file, dos);
 
 				} else {
-					String errCom = "Commande inconnue";
-					byte[] send = errCom.getBytes();
-					try {
-						dos.writeInt(errCom.length());
-						dos.write(send);
-					} catch (IOException e) {
-						e.printStackTrace(System.err);
-						System.exit(-1);
-					}
+					envoie_info("Commande inconnue", dos);
 				}
 			} else {
-				String errArg = "Pas assez d'argument";
-				byte[] send = errArg.getBytes();
-				try {
-					dos.writeInt(errArg.length());
-					dos.write(send);
-				} catch (IOException e) {
-					e.printStackTrace(System.err);
-					System.exit(-1);
-				}
+				envoie_info("Pas assez d'arguments", dos);
 			}
 
+		}
+	}
+	
+	private void envoie_info (String info, DataOutputStream dos) {
+		byte[] bInfo = info.getBytes();
+		try {
+			dos.writeInt(info.length());
+			dos.write(bInfo);
+		} catch (IOException e1) {
+			e1.printStackTrace(System.err);
+			System.exit(-1);
 		}
 	}
 
@@ -128,10 +109,7 @@ public class Server {
 			File f = new File(folder + "/" + file);
 			fis = new FileInputStream(f);
 
-			String info = "OK";
-			byte[] bInfo = info.getBytes();
-			dos.write(info.length());
-			dos.write(bInfo);
+			envoie_info("OK", dos);
 
 			byte[] bFile = new byte[SIZE];
 
@@ -143,27 +121,14 @@ public class Server {
 				dos.write(bFile);
 			}
 			
+			fis.close();
+			
 		} catch (FileNotFoundException e) {
-			String errFile = file + "not found";
-			byte[] send = errFile.getBytes();
-			try {
-				dos.writeInt(errFile.length());
-				dos.write(send);
-			} catch (IOException e1) {
-				e.printStackTrace(System.err);
-				System.exit(-1);
-			}
+			envoie_info(file + " not found", dos);
 		} catch (IOException e) {
 			e.printStackTrace(System.err);
 			System.exit(-1);
-		} finally {
-			try {
-				fis.close();
-			} catch (IOException e) {
-				e.printStackTrace(System.err);
-				System.exit(-1);
-			}
-		}
+		} 
 	}
 
 	private String[] lecture_commande(DataInputStream dis) throws IOException {
