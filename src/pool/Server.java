@@ -1,19 +1,22 @@
-package multi_thread;
+package pool;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+
 public class Server {
 
+	final static int BUFFCLIENT_SIZE = 10;
+	final static int NB_WORKERS = 4;
 	int port;
 	String folder;
-
+	
 	public Server(int port, String folder) {
-		this.port = port;
 		this.folder = folder;
+		this.port = port;
 	}
-
+	
 	private void run() {
 		ServerSocket server = null;
 		try {
@@ -22,24 +25,37 @@ public class Server {
 			e.printStackTrace();
 			System.exit(-1);
 		}
-
+		
+		ClientBuffer cb = new ClientBuffer(BUFFCLIENT_SIZE);
+		
+		for (int i = 0; i < NB_WORKERS; i++) {
+			Worker w = new Worker(folder, cb);
+			w.setDaemon(true);
+			w.start();
+		}
+		
 		while (true) {
+			
 			Socket client = null;
 			// Connexion avec le client
 			try {
 				client = server.accept();
-				Worker w = new Worker(client, folder);
-				w.start();
+				
+				// Ajout de la socket client dans le bufferClient
+				cb.put(client);
 			} catch (IOException e) {
+				e.printStackTrace(System.err);
+				System.exit(-1);
+			} catch (InterruptedException e) {
 				e.printStackTrace(System.err);
 				System.exit(-1);
 			}
 			System.out.println("Client" + client.getInetAddress() + " connected");
 
 		}
-
+		
 	}
-
+	
 	public static void main(String[] args) {
 		int port = 0;
 		String folder = null;
@@ -52,8 +68,7 @@ public class Server {
 		}
 
 		Server s = new Server(port, folder);
-
+		
 		s.run();
 	}
-
 }
